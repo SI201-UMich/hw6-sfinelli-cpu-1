@@ -208,6 +208,60 @@ def recommend_breeds_in_same_group(breed_name, cache_file):
             "No group information available for '{breed_name}'."  (no group id)
             "No recommendations found based on '{breed_name}'."  (no other breeds in that group)
     """
+    cache = load_json(cache_file)
+
+    if not cache:
+        return "No breed data found in cache."
+
+    
+    target_group_id = None
+    for entry in cache.values():
+        try:
+            name = entry['data']['attributes']['name']
+            if name.lower() == breed_name.lower():
+                target_group_id = entry['data']['relationships']['group']['data']['id']
+                break
+        except (KeyError, TypeError):
+            
+            try:
+                name = entry['data']['attributes']['name']
+                if name.lower() == breed_name.lower():
+                    return f"No group information available for '{breed_name}'."
+            except (KeyError, TypeError):
+                continue
+
+    #
+    found_name = False
+    for entry in cache.values():
+        try:
+            name = entry['data']['attributes']['name']
+            if name.lower() == breed_name.lower():
+                found_name = True
+                break
+        except (KeyError, TypeError):
+            continue
+
+    if not found_name:
+        return f"'{breed_name}' is not in the cache."
+
+    if target_group_id is None:
+        return f"No group information available for '{breed_name}'."
+
+    
+    recommendations = []
+    for entry in cache.values():
+        try:
+            name = entry['data']['attributes']['name']
+            group_id = entry['data']['relationships']['group']['data']['id']
+            if group_id == target_group_id and name.lower() != breed_name.lower():
+                recommendations.append(name)
+        except (KeyError, TypeError):
+            continue
+
+    if not recommendations:
+        return f"No recommendations found based on '{breed_name}'."
+
+    return sorted(recommendations)
 
 
 class TestHomeworkDogAPI(unittest.TestCase):
