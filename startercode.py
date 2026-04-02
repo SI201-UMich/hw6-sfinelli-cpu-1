@@ -79,7 +79,7 @@ def search_breed(breed_id):
     try:
         response = requests.get(url)
         parsed = response.json()
-        # Check that the response has a non-None 'data' key
+        
         if 'data' not in parsed or parsed['data'] is None:
             return None
         return (parsed, url)
@@ -102,6 +102,19 @@ def update_cache(breed_ids, cache_file):
         A string: "Cached data for {percentage}% of breeds",
         where percentage = (successful_new_adds / len(breed_ids)) * 100.
     """
+    for breed_id in breed_ids:
+        url = f"https://dogapi.dog/api/v2/breeds/{breed_id}"
+        if url in cache:
+            continue
+        result = search_breed(breed_id)
+        if result is not None:
+            parsed, response_url = result
+            cache[response_url] = parsed
+            successful_new_adds += 1
+
+    create_cache(cache, cache_file)
+    percentage = (successful_new_adds / len(breed_ids)) * 100
+    return f"Cached data for {percentage}% of breeds"
     pass
 
 
